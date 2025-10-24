@@ -211,28 +211,28 @@ class UpdaterViewModel: ObservableObject {
     @Published var canCheckForUpdates = false
     
     init() {
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-        
-        // Enable automatic update checking
-        updaterController.updater.automaticallyChecksForUpdates = autoUpdateCheck
-        updaterController.updater.updateCheckInterval = 24 * 60 * 60
-        
-        updaterController.updater.publisher(for: \.canCheckForUpdates)
-            .assign(to: &$canCheckForUpdates)
+        updaterController = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
+
+        // Disable automatic update checking
+        updaterController.updater.automaticallyChecksForUpdates = false
+
+        // Set canCheckForUpdates to false permanently
+        canCheckForUpdates = false
     }
-    
+
     func toggleAutoUpdates(_ value: Bool) {
-        updaterController.updater.automaticallyChecksForUpdates = value
+        // Updates disabled for custom build
+        print("Updates disabled for custom build")
     }
-    
+
     func checkForUpdates() {
-        // This is for manual checks - will show UI
-        updaterController.checkForUpdates(nil)
+        // Updates disabled for custom build
+        print("Updates disabled for custom build")
     }
-    
+
     func silentlyCheckForUpdates() {
-        // This checks for updates in the background without showing UI unless an update is found
-        updaterController.updater.checkForUpdatesInBackground()
+        // Updates disabled for custom build
+        print("Updates disabled for custom build")
     }
 }
 

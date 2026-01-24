@@ -207,6 +207,7 @@ var canUseApp: Bool {
 
 **`VoiceInk/VoiceInk.swift`:**
 - Sparkle auto-update framework initialization is bypassed/disabled
+- CloudKit sync disabled for dictionary (change `cloudKitDatabase: .private(...)` to `.none`)
 
 ### Updating Workflow
 
@@ -246,31 +247,67 @@ After rebasing, verify the custom modifications are still in place:
 
 This project can be built for local use without an Apple Developer account:
 
-**Via Command Line:**
+**Prerequisites (one-time setup):**
+
+1. **Create symlink for xcframework path:**
+   ```bash
+   mkdir -p ~/Tools/VoiceInk-Dependencies
+   ln -sf ~/Tools/whisper.cpp ~/Tools/VoiceInk-Dependencies/whisper.cpp
+   ```
+
+2. **Remove capabilities requiring paid account (in Xcode):**
+   - Open `VoiceInk.xcodeproj` in Xcode
+   - Select VoiceInk target → Signing & Capabilities tab
+   - Delete **iCloud** capability (click trash icon)
+   - Delete **Push Notifications** capability (click trash icon)
+   - Set Team to your personal team
+
+3. **Create VoiceInk scheme if missing:**
+   - If only SPM package schemes appear (KeyboardShortcuts, SelectedTextKit), the VoiceInk scheme is missing
+   - In Xcode: Product → Scheme → New Scheme → select VoiceInk target
+
+**Build Release version:**
 ```bash
-xcodebuild clean -project VoiceInk.xcodeproj -scheme VoiceInk
-xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Release build
+cd ~/Tools/VoiceInk
+xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Release -arch arm64 build
 ```
 
-**If signing fails, configure in Xcode (one-time setup):**
-1. Open `VoiceInk.xcodeproj` in Xcode
-2. Select the VoiceInk target → Signing & Capabilities tab
-3. Set Team to "None" or your personal team
-4. Set Signing Certificate to "Sign to Run Locally"
-5. Build with Cmd+B
+**Install to Applications:**
+```bash
+rm -rf /Applications/VoiceInk.app
+cp -R ~/Library/Developer/Xcode/DerivedData/VoiceInk-*/Build/Products/Release/VoiceInk.app /Applications/
+```
 
-The built app will be in `~/Library/Developer/Xcode/DerivedData/VoiceInk-*/Build/Products/Release/VoiceInk.app`
+**Clean up after building (removes extra Spotlight entries):**
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/VoiceInk-*
+```
 
 ### Troubleshooting
 
 **"whisper.xcframework not found" error:**
+- Create symlink: `mkdir -p ~/Tools/VoiceInk-Dependencies && ln -sf ~/Tools/whisper.cpp ~/Tools/VoiceInk-Dependencies/whisper.cpp`
 - Rebuild xcframework: `cd ~/Tools/whisper.cpp && ./build-xcframework.sh`
 
-**Signing errors during build:**
-- Configure signing in Xcode GUI (see above)
+**Signing/provisioning profile errors:**
+- Remove iCloud and Push Notifications capabilities in Xcode (see Prerequisites above)
+
+**App crashes on launch (CloudKit error):**
+- Verify `VoiceInk.swift` has `cloudKitDatabase: .none` for the dictionary config (not `.private(...)`)
+
+**No VoiceInk scheme available:**
+- Create scheme: Product → Scheme → New Scheme → select VoiceInk target
+- Or check `xcshareddata/xcschemes/VoiceInk.xcscheme` exists
+
+**Multiple VoiceInks appear in Spotlight:**
+- Clean up: `rm -rf ~/Library/Developer/Xcode/DerivedData/VoiceInk-*`
 
 **License prompt appears:**
 - Verify `LicenseViewModel.swift` modifications are in place after rebase
 
 **App tries to auto-update:**
 - Verify `VoiceInk.swift` Sparkle bypass is in place after rebase
+
+**Slow transcription startup:**
+- Normal behavior - Whisper models need to load into memory on first use
+- Larger models (large-v3-turbo) take longer to initialize

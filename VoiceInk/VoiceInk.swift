@@ -204,7 +204,7 @@ struct VoiceInkApp: App {
                 "dictionary",
                 schema: dictionarySchema,
                 url: dictionaryStoreURL,
-                cloudKitDatabase: dictionaryCloudKit
+                cloudKitDatabase: .none
             )
 
             // Initialize container

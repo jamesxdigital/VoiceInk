@@ -186,19 +186,91 @@ This repository has two branches:
   - **Auto-updates disabled**: Prevents custom build from being overwritten
 - Use this branch for development and running the app
 
+### Custom Modifications (Exact Changes)
+
+**`VoiceInk/Models/LicenseViewModel.swift`:**
+```swift
+// Change 1: Initialize as licensed
+@Published private(set) var licenseState: LicenseState = .licensed
+
+// Change 2: In loadLicenseState(), always set licensed
+private func loadLicenseState() {
+    licenseState = .licensed
+    // ... rest of function bypassed
+}
+
+// Change 3: canUseApp always returns true
+var canUseApp: Bool {
+    return true
+}
+```
+
+**`VoiceInk/VoiceInk.swift`:**
+- Sparkle auto-update framework initialization is bypassed/disabled
+
 ### Updating Workflow
 
-To pull latest upstream updates while preserving custom modifications:
+**Important:** Before updating VoiceInk, you must first rebuild `whisper.xcframework` from the updated whisper.cpp repo.
 
 ```bash
-# Update main from upstream
+# Step 0: Rebuild whisper.cpp xcframework first
+cd ~/Tools/whisper.cpp
+./build-xcframework.sh
+
+# Step 1: Handle any uncommitted changes
+cd ~/Tools/VoiceInk
+git stash
+
+# Step 2: Update main from upstream
 git checkout main
 git fetch upstream
 git merge --ff-only upstream/main
 
-# Rebase custom-build on updated main
+# Step 3: Rebase custom-build on updated main
 git checkout custom-build
 git rebase main
+# If conflicts occur in LicenseViewModel.swift, re-apply the license bypass manually
+
+# Step 4: Restore stashed changes if any
+git stash pop
 ```
 
-This keeps your custom-build branch with all upstream features plus the license/update modifications.
+### Verifying Modifications After Rebase
+
+After rebasing, verify the custom modifications are still in place:
+
+1. **License bypass:** Check `LicenseViewModel.swift` - `licenseState` should initialize to `.licensed`
+2. **Auto-update disabled:** Check `VoiceInk.swift` - Sparkle initialization should be bypassed
+
+### Building Without Apple Developer Account
+
+This project can be built for local use without an Apple Developer account:
+
+**Via Command Line:**
+```bash
+xcodebuild clean -project VoiceInk.xcodeproj -scheme VoiceInk
+xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Release build
+```
+
+**If signing fails, configure in Xcode (one-time setup):**
+1. Open `VoiceInk.xcodeproj` in Xcode
+2. Select the VoiceInk target → Signing & Capabilities tab
+3. Set Team to "None" or your personal team
+4. Set Signing Certificate to "Sign to Run Locally"
+5. Build with Cmd+B
+
+The built app will be in `~/Library/Developer/Xcode/DerivedData/VoiceInk-*/Build/Products/Release/VoiceInk.app`
+
+### Troubleshooting
+
+**"whisper.xcframework not found" error:**
+- Rebuild xcframework: `cd ~/Tools/whisper.cpp && ./build-xcframework.sh`
+
+**Signing errors during build:**
+- Configure signing in Xcode GUI (see above)
+
+**License prompt appears:**
+- Verify `LicenseViewModel.swift` modifications are in place after rebase
+
+**App tries to auto-update:**
+- Verify `VoiceInk.swift` Sparkle bypass is in place after rebase

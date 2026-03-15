@@ -249,34 +249,31 @@ This project can be built for local use without an Apple Developer account:
 
 **Prerequisites (one-time setup):**
 
-1. **Create symlink for xcframework path:**
-   ```bash
-   mkdir -p ~/Tools/VoiceInk-Dependencies
-   ln -sf ~/Tools/whisper.cpp ~/Tools/VoiceInk-Dependencies/whisper.cpp
-   ```
-
-2. **Remove capabilities requiring paid account (in Xcode):**
+1. **Remove capabilities requiring paid account (in Xcode):**
    - Open `VoiceInk.xcodeproj` in Xcode
    - Select VoiceInk target → Signing & Capabilities tab
    - Delete **iCloud** capability (click trash icon)
    - Delete **Push Notifications** capability (click trash icon)
    - Set Team to your personal team
 
-3. **Create VoiceInk scheme if missing:**
+2. **Create VoiceInk scheme if missing:**
    - If only SPM package schemes appear (KeyboardShortcuts, SelectedTextKit), the VoiceInk scheme is missing
    - In Xcode: Product → Scheme → New Scheme → select VoiceInk target
 
 **Build Release version:**
 ```bash
 cd ~/Tools/VoiceInk
-xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Release -arch arm64 build
+xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Release -arch arm64 -allowProvisioningUpdates build
 ```
 
 **Install to Applications:**
 ```bash
 rm -rf /Applications/VoiceInk.app
 cp -R ~/Library/Developer/Xcode/DerivedData/VoiceInk-*/Build/Products/Release/VoiceInk.app /Applications/
+codesign --force --deep --sign "Apple Development: james.milton@me.com (QS8QDV4C85)" /Applications/VoiceInk.app
 ```
+
+**Note:** The codesign step is required. Without it the app gets ad-hoc signed and macOS blocks it after every restart.
 
 **Clean up after building (removes extra Spotlight entries):**
 ```bash
@@ -286,7 +283,7 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/VoiceInk-*
 ### Troubleshooting
 
 **"whisper.xcframework not found" error:**
-- Create symlink: `mkdir -p ~/Tools/VoiceInk-Dependencies && ln -sf ~/Tools/whisper.cpp ~/Tools/VoiceInk-Dependencies/whisper.cpp`
+- Ensure whisper.cpp is at `~/Tools/whisper.cpp` (sibling to VoiceInk)
 - Rebuild xcframework: `cd ~/Tools/whisper.cpp && ./build-xcframework.sh`
 
 **Signing/provisioning profile errors:**
